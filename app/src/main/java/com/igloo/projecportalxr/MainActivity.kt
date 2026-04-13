@@ -31,6 +31,7 @@ import androidx.xr.compose.subspace.layout.resizable
 import androidx.xr.compose.subspace.layout.width
 import com.igloo.projecportalxr.ui.theme.ProjecPortalXRTheme
 import com.igloo.portalxr.gateway.*
+import com.igloo.projecportalxr.ui.chat.ChatPanel
 import org.a2ui.compose.theme.A2UITheme
 import org.a2ui.compose.theme.A2UIThemeConfig
 
@@ -83,6 +84,22 @@ fun PortalXRSpatialContent(onRequestHomeSpaceMode: () -> Unit) {
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(24.dp)
+            )
+        }
+    }
+
+    // 聊天面板
+    SpatialPanel(
+        SubspaceModifier
+            .width(900.dp)
+            .height(700.dp)
+            .resizable()
+            .movable()
+    ) {
+        Surface {
+            ChatPanel(
+                controller = viewModel.chatController,
+                modifier = Modifier.fillMaxSize()
             )
         }
     }

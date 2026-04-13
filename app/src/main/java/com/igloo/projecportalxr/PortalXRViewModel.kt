@@ -8,6 +8,7 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.igloo.portalxr.gateway.*
+import com.igloo.projecportalxr.chat.*
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -16,7 +17,7 @@ import org.a2ui.compose.service.A2UIService
 import org.a2ui.compose.rendering.A2UIRenderer
 import org.a2ui.compose.rendering.ActionHandler
 
-class PortalXRViewModel(application: Application) : AndroidViewModel(application), A2UIMessageHandler {
+class PortalXRViewModel(application: Application) : AndroidViewModel(application), A2UIMessageHandler, ChatEventHandler {
 
     companion object {
         private const val PREFS_NAME = "portalxr_prefs"
@@ -30,6 +31,10 @@ class PortalXRViewModel(application: Application) : AndroidViewModel(application
 
     // Gateway 运行时
     private val runtime: PortalXRRuntime
+
+    // 聊天控制器
+    lateinit var chatController: ChatController
+        private set
 
     // SharedPreferences for persistence
     private val prefs = application.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
@@ -55,8 +60,11 @@ class PortalXRViewModel(application: Application) : AndroidViewModel(application
             }
         })
 
-        // 初始化 Gateway 运行时，传入 A2UI 消息处理器
-        runtime = PortalXRRuntime(application.applicationContext, this)
+        // 初始化 Gateway 运行时，传入 A2UI 消息处理器和聊天事件处理器
+        runtime = PortalXRRuntime(application.applicationContext, this, this)
+
+        // 初始化聊天控制器
+        chatController = ChatController(viewModelScope, runtime.session)
     }
 
     // Connection state - 使用 mutableStateOf 以支持 Compose 重组
@@ -74,6 +82,10 @@ class PortalXRViewModel(application: Application) : AndroidViewModel(application
         viewModelScope.launch {
             runtime.isConnected.collect { connected ->
                 _isConnected = connected
+                if (connected) {
+                    // 连接成功后加载聊天
+                    chatController.load("main")
+                }
             }
         }
         viewModelScope.launch {
@@ -164,6 +176,17 @@ class PortalXRViewModel(application: Application) : AndroidViewModel(application
 
             android.util.Log.i("PortalXR", "processMessage result: $result, surfaces: $surfaceIds")
         }
+    }
+
+    /**
+     * 实现 ChatEventHandler - 接收 Gateway 的聊天事件
+     */
+    override fun handleGatewayEvent(event: String, payloadJson: String?) {
+        chatController.handleGatewayEvent(event, payloadJson)
+    }
+
+    override fun onDisconnected(message: String) {
+        chatController.onDisconnected(message)
     }
 
     override fun onCleared() {

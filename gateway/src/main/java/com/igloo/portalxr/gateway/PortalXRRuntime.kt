@@ -14,6 +14,14 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 /**
+ * Chat event callback interface
+ */
+interface ChatEventHandler {
+    fun handleGatewayEvent(event: String, payloadJson: String?)
+    fun onDisconnected(message: String)
+}
+
+/**
  * A2UI 消息回调接口
  */
 interface A2UIMessageHandler {
@@ -26,6 +34,7 @@ interface A2UIMessageHandler {
 class PortalXRRuntime(
     private val context: Context,
     private val a2uiHandler: A2UIMessageHandler? = null,
+    private val chatHandler: ChatEventHandler? = null,
 ) {
     private val appContext = context.applicationContext
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -74,7 +83,7 @@ class PortalXRRuntime(
         },
     )
 
-    private val session: GatewaySession = GatewaySession(
+    private val _session: GatewaySession = GatewaySession(
         scope = scope,
         identityStore = identityStore,
         onConnected = { name, remote, mainSessionKey ->
@@ -87,6 +96,7 @@ class PortalXRRuntime(
             _statusText.value = message
             _serverName.value = null
             _canvasHostUrl.value = null
+            chatHandler?.onDisconnected(message)
         },
         onEvent = { event, payloadJson ->
             handleGatewayEvent(event, payloadJson)
@@ -95,6 +105,9 @@ class PortalXRRuntime(
             invokeDispatcher.handleInvoke(req.command, req.paramsJson)
         },
     )
+
+    // Expose session for ChatController
+    val session: GatewaySession get() = _session
 
     val deviceId: String
         get() = identityStore.loadOrCreate().deviceId
@@ -191,6 +204,9 @@ class PortalXRRuntime(
     }
 
     private fun handleGatewayEvent(event: String, payloadJson: String?) {
+        // Forward to chat handler first
+        chatHandler?.handleGatewayEvent(event, payloadJson)
+
         when (event) {
             // A2UI 消息 - 转发给渲染器
             "canvas.a2ui.push",
