@@ -1,0 +1,75 @@
+1<?xml version="1.0" encoding="utf-8"?>
+2<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+3    package="org.a2ui.compose" >
+4
+5    <uses-sdk android:minSdkVersion="21" />
+6
+7    <uses-permission android:name="android.permission.INTERNET" />
+7-->/Users/jyshen/AndroidStudioProjects/ProjecPortalXR/android_compose/src/main/AndroidManifest.xml:5:5-67
+7-->/Users/jyshen/AndroidStudioProjects/ProjecPortalXR/android_compose/src/main/AndroidManifest.xml:5:22-64
+8
+9    <application
+9-->/Users/jyshen/AndroidStudioProjects/ProjecPortalXR/android_compose/src/main/AndroidManifest.xml:7:5-41:19
+10        android:allowBackup="true"
+10-->/Users/jyshen/AndroidStudioProjects/ProjecPortalXR/android_compose/src/main/AndroidManifest.xml:8:9-35
+11        android:label="@string/app_name"
+11-->/Users/jyshen/AndroidStudioProjects/ProjecPortalXR/android_compose/src/main/AndroidManifest.xml:9:9-41
+12        android:supportsRtl="true"
+12-->/Users/jyshen/AndroidStudioProjects/ProjecPortalXR/android_compose/src/main/AndroidManifest.xml:10:9-35
+13        android:usesCleartextTraffic="true" >
+13-->/Users/jyshen/AndroidStudioProjects/ProjecPortalXR/android_compose/src/main/AndroidManifest.xml:11:9-44
+14        <activity
+14-->/Users/jyshen/AndroidStudioProjects/ProjecPortalXR/android_compose/src/main/AndroidManifest.xml:13:9-22:20
+15            android:name="org.a2ui.compose.example.A2UIDemoActivity"
+15-->/Users/jyshen/AndroidStudioProjects/ProjecPortalXR/android_compose/src/main/AndroidManifest.xml:14:13-53
+16            android:exported="true"
+16-->/Users/jyshen/AndroidStudioProjects/ProjecPortalXR/android_compose/src/main/AndroidManifest.xml:15:13-36
+17            android:label="@string/app_name"
+17-->/Users/jyshen/AndroidStudioProjects/ProjecPortalXR/android_compose/src/main/AndroidManifest.xml:16:13-45
+18            android:theme="@style/Theme.A2UICompose" >
+18-->/Users/jyshen/AndroidStudioProjects/ProjecPortalXR/android_compose/src/main/AndroidManifest.xml:17:13-53
+19            <intent-filter>
+19-->/Users/jyshen/AndroidStudioProjects/ProjecPortalXR/android_compose/src/main/AndroidManifest.xml:18:13-21:29
+20                <action android:name="android.intent.action.MAIN" />
+20-->/Users/jyshen/AndroidStudioProjects/ProjecPortalXR/android_compose/src/main/AndroidManifest.xml:19:17-69
+20-->/Users/jyshen/AndroidStudioProjects/ProjecPortalXR/android_compose/src/main/AndroidManifest.xml:19:25-66
+21
+22                <category android:name="android.intent.category.LAUNCHER" />
+22-->/Users/jyshen/AndroidStudioProjects/ProjecPortalXR/android_compose/src/main/AndroidManifest.xml:20:17-77
+22-->/Users/jyshen/AndroidStudioProjects/ProjecPortalXR/android_compose/src/main/AndroidManifest.xml:20:27-74
+23            </intent-filter>
+24        </activity>
+25        <activity
+25-->/Users/jyshen/AndroidStudioProjects/ProjecPortalXR/android_compose/src/main/AndroidManifest.xml:24:9-28:56
+26            android:name="org.a2ui.compose.example.A2UISampleActivity"
+26-->/Users/jyshen/AndroidStudioProjects/ProjecPortalXR/android_compose/src/main/AndroidManifest.xml:25:13-55
+27            android:exported="false"
+27-->/Users/jyshen/AndroidStudioProjects/ProjecPortalXR/android_compose/src/main/AndroidManifest.xml:26:13-37
+28            android:label="A2UI Sample"
+28-->/Users/jyshen/AndroidStudioProjects/ProjecPortalXR/android_compose/src/main/AndroidManifest.xml:27:13-40
+29            android:theme="@style/Theme.A2UICompose" />
+29-->/Users/jyshen/AndroidStudioProjects/ProjecPortalXR/android_compose/src/main/AndroidManifest.xml:28:13-53
+30        <activity
+30-->/Users/jyshen/AndroidStudioProjects/ProjecPortalXR/android_compose/src/main/AndroidManifest.xml:30:9-39:20
+31            android:name="org.a2ui.compose.example.A2UIComprehensiveDemo"
+31-->/Users/jyshen/AndroidStudioProjects/ProjecPortalXR/android_compose/src/main/AndroidManifest.xml:31:13-58
+32            android:exported="true"
+32-->/Users/jyshen/AndroidStudioProjects/ProjecPortalXR/android_compose/src/main/AndroidManifest.xml:32:13-36
+33            android:label="A2UI v0.9 Comprehensive Demo"
+33-->/Users/jyshen/AndroidStudioProjects/ProjecPortalXR/android_compose/src/main/AndroidManifest.xml:33:13-57
+34            android:theme="@style/Theme.A2UICompose" >
+34-->/Users/jyshen/AndroidStudioProjects/ProjecPortalXR/android_compose/src/main/AndroidManifest.xml:34:13-53
+35            <intent-filter>
+35-->/Users/jyshen/AndroidStudioProjects/ProjecPortalXR/android_compose/src/main/AndroidManifest.xml:35:13-38:29
+36                <action android:name="android.intent.action.MAIN" />
+36-->/Users/jyshen/AndroidStudioProjects/ProjecPortalXR/android_compose/src/main/AndroidManifest.xml:19:17-69
+36-->/Users/jyshen/AndroidStudioProjects/ProjecPortalXR/android_compose/src/main/AndroidManifest.xml:19:25-66
+37
+38                <category android:name="android.intent.category.DEFAULT" />
+38-->/Users/jyshen/AndroidStudioProjects/ProjecPortalXR/android_compose/src/main/AndroidManifest.xml:37:17-76
+38-->/Users/jyshen/AndroidStudioProjects/ProjecPortalXR/android_compose/src/main/AndroidManifest.xml:37:27-73
+39            </intent-filter>
+40        </activity>
+41    </application>
+42
+43</manifest>

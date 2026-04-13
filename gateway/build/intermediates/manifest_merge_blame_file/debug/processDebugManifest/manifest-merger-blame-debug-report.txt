@@ -1,0 +1,34 @@
+1<?xml version="1.0" encoding="utf-8"?>
+2<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+3    package="com.igloo.portalxr.gateway" >
+4
+5    <uses-sdk android:minSdkVersion="34" />
+6    <!-- Network permissions -->
+7    <uses-permission android:name="android.permission.INTERNET" />
+7-->/Users/jyshen/AndroidStudioProjects/ProjecPortalXR/gateway/src/main/AndroidManifest.xml:4:5-67
+7-->/Users/jyshen/AndroidStudioProjects/ProjecPortalXR/gateway/src/main/AndroidManifest.xml:4:22-64
+8    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+8-->/Users/jyshen/AndroidStudioProjects/ProjecPortalXR/gateway/src/main/AndroidManifest.xml:5:5-79
+8-->/Users/jyshen/AndroidStudioProjects/ProjecPortalXR/gateway/src/main/AndroidManifest.xml:5:22-76
+9
+10    <!-- Optional permissions for capabilities -->
+11    <uses-permission
+11-->/Users/jyshen/AndroidStudioProjects/ProjecPortalXR/gateway/src/main/AndroidManifest.xml:8:5-90
+12        android:name="android.permission.CAMERA"
+12-->/Users/jyshen/AndroidStudioProjects/ProjecPortalXR/gateway/src/main/AndroidManifest.xml:8:22-62
+13        android:required="false" />
+13-->/Users/jyshen/AndroidStudioProjects/ProjecPortalXR/gateway/src/main/AndroidManifest.xml:8:63-87
+14    <uses-permission
+14-->/Users/jyshen/AndroidStudioProjects/ProjecPortalXR/gateway/src/main/AndroidManifest.xml:9:5-104
+15        android:name="android.permission.ACCESS_FINE_LOCATION"
+15-->/Users/jyshen/AndroidStudioProjects/ProjecPortalXR/gateway/src/main/AndroidManifest.xml:9:22-76
+16        android:required="false" />
+16-->/Users/jyshen/AndroidStudioProjects/ProjecPortalXR/gateway/src/main/AndroidManifest.xml:9:77-101
+17    <uses-permission
+17-->/Users/jyshen/AndroidStudioProjects/ProjecPortalXR/gateway/src/main/AndroidManifest.xml:10:5-106
+18        android:name="android.permission.ACCESS_COARSE_LOCATION"
+18-->/Users/jyshen/AndroidStudioProjects/ProjecPortalXR/gateway/src/main/AndroidManifest.xml:10:22-78
+19        android:required="false" />
+19-->/Users/jyshen/AndroidStudioProjects/ProjecPortalXR/gateway/src/main/AndroidManifest.xml:10:79-103
+20
+21</manifest>

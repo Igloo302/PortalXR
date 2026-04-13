@@ -1,0 +1,42 @@
+-- Merging decision tree log ---
+manifest
+ADDED from /Users/jyshen/AndroidStudioProjects/ProjecPortalXR/gateway/src/main/AndroidManifest.xml:2:1-11:12
+INJECTED from /Users/jyshen/AndroidStudioProjects/ProjecPortalXR/gateway/src/main/AndroidManifest.xml:2:1-11:12
+	package
+		INJECTED from /Users/jyshen/AndroidStudioProjects/ProjecPortalXR/gateway/src/main/AndroidManifest.xml
+	xmlns:android
+		ADDED from /Users/jyshen/AndroidStudioProjects/ProjecPortalXR/gateway/src/main/AndroidManifest.xml:2:11-69
+uses-permission#android.permission.INTERNET
+ADDED from /Users/jyshen/AndroidStudioProjects/ProjecPortalXR/gateway/src/main/AndroidManifest.xml:4:5-67
+	android:name
+		ADDED from /Users/jyshen/AndroidStudioProjects/ProjecPortalXR/gateway/src/main/AndroidManifest.xml:4:22-64
+uses-permission#android.permission.ACCESS_NETWORK_STATE
+ADDED from /Users/jyshen/AndroidStudioProjects/ProjecPortalXR/gateway/src/main/AndroidManifest.xml:5:5-79
+	android:name
+		ADDED from /Users/jyshen/AndroidStudioProjects/ProjecPortalXR/gateway/src/main/AndroidManifest.xml:5:22-76
+uses-permission#android.permission.CAMERA
+ADDED from /Users/jyshen/AndroidStudioProjects/ProjecPortalXR/gateway/src/main/AndroidManifest.xml:8:5-90
+	android:required
+		ADDED from /Users/jyshen/AndroidStudioProjects/ProjecPortalXR/gateway/src/main/AndroidManifest.xml:8:63-87
+	android:name
+		ADDED from /Users/jyshen/AndroidStudioProjects/ProjecPortalXR/gateway/src/main/AndroidManifest.xml:8:22-62
+uses-permission#android.permission.ACCESS_FINE_LOCATION
+ADDED from /Users/jyshen/AndroidStudioProjects/ProjecPortalXR/gateway/src/main/AndroidManifest.xml:9:5-104
+	android:required
+		ADDED from /Users/jyshen/AndroidStudioProjects/ProjecPortalXR/gateway/src/main/AndroidManifest.xml:9:77-101
+	android:name
+		ADDED from /Users/jyshen/AndroidStudioProjects/ProjecPortalXR/gateway/src/main/AndroidManifest.xml:9:22-76
+uses-permission#android.permission.ACCESS_COARSE_LOCATION
+ADDED from /Users/jyshen/AndroidStudioProjects/ProjecPortalXR/gateway/src/main/AndroidManifest.xml:10:5-106
+	android:required
+		ADDED from /Users/jyshen/AndroidStudioProjects/ProjecPortalXR/gateway/src/main/AndroidManifest.xml:10:79-103
+	android:name
+		ADDED from /Users/jyshen/AndroidStudioProjects/ProjecPortalXR/gateway/src/main/AndroidManifest.xml:10:22-78
+uses-sdk
+INJECTED from /Users/jyshen/AndroidStudioProjects/ProjecPortalXR/gateway/src/main/AndroidManifest.xml reason: use-sdk injection requested
+INJECTED from /Users/jyshen/AndroidStudioProjects/ProjecPortalXR/gateway/src/main/AndroidManifest.xml
+INJECTED from /Users/jyshen/AndroidStudioProjects/ProjecPortalXR/gateway/src/main/AndroidManifest.xml
+	android:targetSdkVersion
+		INJECTED from /Users/jyshen/AndroidStudioProjects/ProjecPortalXR/gateway/src/main/AndroidManifest.xml
+	android:minSdkVersion
+		INJECTED from /Users/jyshen/AndroidStudioProjects/ProjecPortalXR/gateway/src/main/AndroidManifest.xml
