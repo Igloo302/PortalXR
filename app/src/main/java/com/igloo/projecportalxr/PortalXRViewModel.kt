@@ -63,13 +63,19 @@ class PortalXRViewModel(application: Application) : AndroidViewModel(application
         // 初始化 Gateway 运行时，传入 A2UI 消息处理器和聊天事件处理器
         runtime = PortalXRRuntime(application.applicationContext, this, this)
 
-        // 初始化聊天控制器
-        chatController = ChatController(viewModelScope, runtime.session)
+        // 初始化聊天控制器 - 使用 operator session
+        chatController = ChatController(viewModelScope, runtime.chatSession)
     }
 
     // Connection state - 使用 mutableStateOf 以支持 Compose 重组
     private var _isConnected by mutableStateOf(false)
     val isConnected: Boolean get() = _isConnected
+
+    private var _nodeConnected by mutableStateOf(false)
+    val nodeConnected: Boolean get() = _nodeConnected
+
+    private var _operatorConnected by mutableStateOf(false)
+    val operatorConnected: Boolean get() = _operatorConnected
 
     private var _statusText by mutableStateOf("Offline")
     val statusText: String get() = _statusText
@@ -82,8 +88,18 @@ class PortalXRViewModel(application: Application) : AndroidViewModel(application
         viewModelScope.launch {
             runtime.isConnected.collect { connected ->
                 _isConnected = connected
+            }
+        }
+        viewModelScope.launch {
+            runtime.nodeConnected.collect { connected ->
+                _nodeConnected = connected
+            }
+        }
+        viewModelScope.launch {
+            runtime.operatorConnected.collect { connected ->
+                _operatorConnected = connected
                 if (connected) {
-                    // 连接成功后加载聊天
+                    // Operator 连接成功后加载聊天
                     chatController.load("main")
                 }
             }
@@ -111,9 +127,14 @@ class PortalXRViewModel(application: Application) : AndroidViewModel(application
     private var _surfaceIds by mutableStateOf<List<String>>(emptyList())
     val surfaceIds: List<String> get() = _surfaceIds
 
+    // A2UI 更新触发器 - 用于强制 UI 重组
+    private var _a2uiUpdateTrigger by mutableStateOf(0L)
+    val a2uiUpdateTrigger: Long get() = _a2uiUpdateTrigger
+
     // 更新 surfaceIds 的方法
     private fun updateSurfaceIds() {
         _surfaceIds = a2uiService.rendererState.getAllSurfaceIds()
+        _a2uiUpdateTrigger = System.currentTimeMillis() // 触发 UI 更新
     }
 
     fun enableCamera(value: Boolean) {
@@ -160,21 +181,29 @@ class PortalXRViewModel(application: Application) : AndroidViewModel(application
      * 实现 A2UIMessageHandler - 接收 Gateway 的 A2UI 消息
      */
     override fun onA2UIMessage(message: String) {
-        android.util.Log.i("PortalXR", "onA2UIMessage: ${message.take(500)}")
+        android.util.Log.i("PortalXR", "=== A2UI Message Start ===")
+        android.util.Log.i("PortalXR", "Raw message: ${message.take(1000)}")
+
         val result = a2uiService.processMessage(message)
+        android.util.Log.i("PortalXR", "processMessage result: $result")
 
         // 在主线程上更新状态以触发 UI 重组
         viewModelScope.launch(Dispatchers.Main) {
             updateSurfaceIds()  // 触发 UI 重组
 
             // 调试：打印所有组件
+            android.util.Log.i("PortalXR", "Surface IDs: $surfaceIds")
             surfaceIds.forEach { surfaceId ->
                 val ctx = a2uiService.rendererState.renderer.getSurfaceContext(surfaceId)
-                val root = a2uiService.rendererState.renderer.getComponent(surfaceId, "root")
-                android.util.Log.i("PortalXR", "Surface $surfaceId: ctx=$ctx, root=$root")
+                val rootId = ctx?.rootComponentId ?: "root"
+                val root = a2uiService.rendererState.renderer.getComponent(surfaceId, rootId)
+                val allComponentIds = a2uiService.rendererState.renderer.getAllComponentIds(surfaceId)
+                android.util.Log.i("PortalXR", "Surface $surfaceId:")
+                android.util.Log.i("PortalXR", "  ctx=$ctx")
+                android.util.Log.i("PortalXR", "  rootId=$rootId, root=$root")
+                android.util.Log.i("PortalXR", "  allComponents=$allComponentIds")
             }
-
-            android.util.Log.i("PortalXR", "processMessage result: $result, surfaces: $surfaceIds")
+            android.util.Log.i("PortalXR", "=== A2UI Message End ===")
         }
     }
 

@@ -30,6 +30,10 @@ interface A2UIMessageHandler {
 
 /**
  * Main runtime for the PortalXR node
+ *
+ * Uses dual session architecture:
+ * - nodeSession: handles A2UI push (invoke) and user actions (agent.request)
+ * - operatorSession: handles chat events and messages
  */
 class PortalXRRuntime(
     private val context: Context,
@@ -41,6 +45,15 @@ class PortalXRRuntime(
 
     private val identityStore = DeviceIdentityStore(appContext)
 
+    // Connection states - node session
+    private val _nodeConnected = MutableStateFlow(false)
+    val nodeConnected: StateFlow<Boolean> = _nodeConnected.asStateFlow()
+
+    // Connection states - operator session
+    private val _operatorConnected = MutableStateFlow(false)
+    val operatorConnected: StateFlow<Boolean> = _operatorConnected.asStateFlow()
+
+    // Combined connection state
     private val _isConnected = MutableStateFlow(false)
     val isConnected: StateFlow<Boolean> = _isConnected.asStateFlow()
 
@@ -64,6 +77,7 @@ class PortalXRRuntime(
 
     private var connectedEndpoint: GatewayEndpoint? = null
 
+    // Invoke dispatcher for node session
     private val invokeDispatcher: InvokeDispatcher = InvokeDispatcher(
         context = appContext,
         isForeground = { _isForeground.value },
@@ -74,7 +88,6 @@ class PortalXRRuntime(
         },
         onA2uiPush = { jsonl ->
             android.util.Log.i("PortalXR", "A2UI push received: ${jsonl.take(200)}")
-            // Process each line of JSONL
             jsonl.lines().filter { it.isNotBlank() }.forEach { line ->
                 android.util.Log.i("PortalXR", "A2UI line: $line")
                 a2uiHandler?.onA2UIMessage(line)
@@ -83,34 +96,66 @@ class PortalXRRuntime(
         },
     )
 
-    private val _session: GatewaySession = GatewaySession(
+    // Node session - handles A2UI push (invoke) and user actions
+    private val nodeSession: GatewaySession = GatewaySession(
         scope = scope,
         identityStore = identityStore,
         onConnected = { name, remote, mainSessionKey ->
-            _isConnected.value = true
-            _statusText.value = "Connected"
+            _nodeConnected.value = true
             _serverName.value = name
+            updateConnectionState()
+            android.util.Log.i("PortalXR", "Node session connected")
         },
         onDisconnected = { message ->
-            _isConnected.value = false
-            _statusText.value = message
-            _serverName.value = null
-            _canvasHostUrl.value = null
-            chatHandler?.onDisconnected(message)
+            _nodeConnected.value = false
+            updateConnectionState()
+            android.util.Log.i("PortalXR", "Node session disconnected: $message")
         },
         onEvent = { event, payloadJson ->
-            handleGatewayEvent(event, payloadJson)
+            // Node session doesn't handle events
         },
         onInvoke = { req ->
             invokeDispatcher.handleInvoke(req.command, req.paramsJson)
         },
     )
 
-    // Expose session for ChatController
-    val session: GatewaySession get() = _session
+    // Operator session - handles chat events
+    private val operatorSession: GatewaySession = GatewaySession(
+        scope = scope,
+        identityStore = identityStore,
+        onConnected = { name, remote, mainSessionKey ->
+            _operatorConnected.value = true
+            updateConnectionState()
+            android.util.Log.i("PortalXR", "Operator session connected")
+        },
+        onDisconnected = { message ->
+            _operatorConnected.value = false
+            updateConnectionState()
+            chatHandler?.onDisconnected(message)
+            android.util.Log.i("PortalXR", "Operator session disconnected: $message")
+        },
+        onEvent = { event, payloadJson ->
+            handleGatewayEvent(event, payloadJson)
+        },
+        onInvoke = null, // Operator session doesn't handle invoke
+    )
+
+    // Expose operator session for ChatController
+    val chatSession: GatewaySession get() = operatorSession
 
     val deviceId: String
         get() = identityStore.loadOrCreate().deviceId
+
+    private fun updateConnectionState() {
+        val bothConnected = _nodeConnected.value && _operatorConnected.value
+        _isConnected.value = bothConnected
+        _statusText.value = when {
+            bothConnected -> "Connected"
+            _nodeConnected.value -> "Node connected"
+            _operatorConnected.value -> "Operator connected"
+            else -> "Offline"
+        }
+    }
 
     fun setForeground(value: Boolean) {
         _isForeground.value = value
@@ -126,36 +171,49 @@ class PortalXRRuntime(
 
     fun connect(endpoint: GatewayEndpoint, auth: GatewayConnectAuth = GatewayConnectAuth(null, null, null)) {
         connectedEndpoint = endpoint
-        val options = buildConnectOptions()
-        session.connect(
+
+        // Connect both sessions in parallel
+        // Each session handles its own nonce/signature
+        nodeSession.connect(
             endpoint = endpoint,
             token = auth.token,
             bootstrapToken = auth.bootstrapToken,
             password = auth.password,
-            options = options,
+            options = buildNodeConnectOptions(),
+            tls = null,
+        )
+
+        operatorSession.connect(
+            endpoint = endpoint,
+            token = auth.token,
+            bootstrapToken = auth.bootstrapToken,
+            password = auth.password,
+            options = buildOperatorConnectOptions(),
             tls = null,
         )
     }
 
     fun disconnect() {
         connectedEndpoint = null
-        session.disconnect()
+        nodeSession.disconnect()
+        operatorSession.disconnect()
     }
 
     fun reconnect() {
-        session.reconnect()
+        nodeSession.reconnect()
+        operatorSession.reconnect()
     }
 
     suspend fun sendNodeEvent(event: String, payloadJson: String?): Boolean {
-        return session.sendNodeEvent(event, payloadJson)
+        return nodeSession.sendNodeEvent(event, payloadJson)
     }
 
     suspend fun request(method: String, paramsJson: String?): String {
-        return session.request(method, paramsJson)
+        return operatorSession.request(method, paramsJson)
     }
 
     /**
-     * 发送用户操作回网关
+     * 发送用户操作回网关 (via node session)
      */
     suspend fun sendUserAction(surfaceId: String, actionName: String, context: Map<String, Any>): Boolean {
         val payload = buildString {
@@ -170,25 +228,30 @@ class PortalXRRuntime(
             }
             append("}")
         }
-        return sendNodeEvent("user.action", payload)
+        // Use agent.request event for user actions
+        return nodeSession.sendNodeEvent("agent.request", buildAgentRequestPayload(surfaceId, actionName))
     }
 
-    private fun buildConnectOptions(): GatewayConnectOptions {
-        val flags = NodeRuntimeFlags(
-            cameraEnabled = _cameraEnabled.value,
-            locationEnabled = _locationEnabled.value,
-            xrModeEnabled = true,
-        )
+    private fun buildAgentRequestPayload(surfaceId: String, actionName: String): String {
+        return """{"message":"action:$actionName","sessionKey":"main","thinking":"low","deliver":false,"key":"$surfaceId:$actionName"}"""
+    }
 
+    private fun buildNodeConnectOptions(): GatewayConnectOptions {
         return GatewayConnectOptions(
             role = "node",
-            scopes = listOf("node.read", "node.write"),
-            caps = InvokeCommandRegistry.advertisedCapabilities(flags),
-            commands = InvokeCommandRegistry.advertisedCommands(flags),
-            permissions = mapOf(
-                "camera" to _cameraEnabled.value,
-                "location" to _locationEnabled.value,
+            scopes = emptyList(),
+            caps = listOf("canvas", "device"),  // Advertise capabilities
+            commands = listOf(
+                // Canvas commands
+                "canvas.present", "canvas.hide", "canvas.navigate", "canvas.eval", "canvas.snapshot",
+                // A2UI commands
+                "canvas.a2ui.push", "canvas.a2ui.pushJSONL", "canvas.a2ui.reset",
+                // Device commands
+                "device.status", "device.info", "device.permissions", "device.health",
+                // XR commands
+                "xr.showPanel", "xr.hidePanel", "xr.updatePanel",
             ),
+            permissions = emptyMap(),
             client = GatewayClientInfo(
                 id = "openclaw-android",
                 displayName = "PortalXR Node",
@@ -203,8 +266,29 @@ class PortalXRRuntime(
         )
     }
 
+    private fun buildOperatorConnectOptions(): GatewayConnectOptions {
+        return GatewayConnectOptions(
+            role = "operator",
+            scopes = listOf("operator.read", "operator.write"),
+            caps = emptyList(),
+            commands = emptyList(),
+            permissions = emptyMap(),
+            client = GatewayClientInfo(
+                id = "openclaw-android",
+                displayName = "PortalXR",
+                version = "1.0.0",
+                platform = "android",
+                mode = "ui",
+                instanceId = deviceId,
+                deviceFamily = Build.BRAND,
+                modelIdentifier = Build.MODEL,
+            ),
+            userAgent = "PortalXR/1.0.0 (Android ${Build.VERSION.SDK_INT})",
+        )
+    }
+
     private fun handleGatewayEvent(event: String, payloadJson: String?) {
-        // Forward to chat handler first
+        // Forward to chat handler
         chatHandler?.handleGatewayEvent(event, payloadJson)
 
         when (event) {

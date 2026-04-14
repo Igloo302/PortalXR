@@ -162,20 +162,21 @@ class ComponentRegistry(private val renderer: A2UIRenderer) {
 
         // ==================== Button ====================
         // v0.9: child (ComponentId) + action, variant: primary/borderless
-        // v0.8: child (ComponentId) + action, primary: boolean
+        // v0.8: child (ComponentId) + action, primary: boolean, label
         register("Button") { component, context ->
             val isPrimary = component.variant == "primary" || component.primary == true
             val isBorderless = component.variant == "borderless" || component.variant == "text"
             val isEnabled = (resolve(context, component.value) as? Boolean) ?: true
             val themeConfig = a2uiThemeConfig()
 
-            val buttonModifier = Modifier.fillMaxWidth().semantics { role = Role.Button }
+            // 不使用 fillMaxWidth，让按钮根据内容自适应宽度
+            val buttonModifier = Modifier.semantics { role = Role.Button }
 
             val onClick: () -> Unit = {
                 component.action?.let { renderer.handleAction(context.surfaceId, it) }
             }
 
-            // 渲染按钮内容：优先通过 child 引用子组件，fallback 到 text
+            // 渲染按钮内容：优先通过 child 引用子组件，然后 label，最后 text
             val buttonContent: @Composable RowScope.() -> Unit = {
                 val childId = component.child
                 if (childId != null) {
@@ -183,7 +184,9 @@ class ComponentRegistry(private val renderer: A2UIRenderer) {
                         render(childComp, context.copy(renderDepth = context.renderDepth + 1))
                     }
                 } else {
-                    val text = resolve(context, component.text)?.toString().orEmpty()
+                    // 优先使用 label，fallback 到 text
+                    val labelText = resolve(context, component.label)?.toString()
+                    val text = labelText ?: resolve(context, component.text)?.toString().orEmpty()
                     AnimatedText(text = text, themeConfig = themeConfig)
                 }
             }

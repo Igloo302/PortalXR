@@ -205,6 +205,7 @@ class ChatController(
     }
 
     fun handleGatewayEvent(event: String, payloadJson: String?) {
+        android.util.Log.i("ChatController", "Received event: $event, payload: ${payloadJson?.take(100)}")
         when (event) {
             "tick" -> { scope.launch { pollHealthIfNeeded(force = false) } }
             "health" -> { _healthOk.value = true }
@@ -233,10 +234,14 @@ class ChatController(
         val key = _sessionKey.value
         try {
             if (supportsChatSubscribe) {
+                android.util.Log.i("ChatController", "Subscribing to chat events for session: $key")
                 session.sendNodeEvent("chat.subscribe", """{"sessionKey":"$key"}""")
+                android.util.Log.i("ChatController", "Chat subscribe sent successfully")
             }
 
+            android.util.Log.i("ChatController", "Fetching chat history for session: $key")
             val historyJson = session.request("chat.history", """{"sessionKey":"$key"}""")
+            android.util.Log.i("ChatController", "Chat history received: ${historyJson.take(200)}")
             val history = parseHistory(historyJson, sessionKey = key, previousMessages = _messages.value)
             _messages.value = history.messages
             _sessionId.value = history.sessionId
@@ -262,14 +267,22 @@ class ChatController(
     }
 
     private fun handleChatEvent(payloadJson: String) {
+        android.util.Log.i("ChatController", "handleChatEvent: ${payloadJson.take(200)}")
         val payload = json.parseToJsonElement(payloadJson).asObjectOrNull() ?: return
         val sessionKey = payload["sessionKey"].asStringOrNull()?.trim()
-        if (!sessionKey.isNullOrEmpty() && sessionKey != _sessionKey.value) return
+        // Allow events from agent sessions (e.g., "agent:main:main" matches "main")
+        val eventSessionKey = sessionKey?.removePrefix("agent:")?.substringAfterLast(":") ?: sessionKey
+        val currentSessionKey = _sessionKey.value
+        if (!eventSessionKey.isNullOrEmpty() && eventSessionKey != currentSessionKey && sessionKey != currentSessionKey) {
+            android.util.Log.i("ChatController", "Ignoring event for different session: $sessionKey (current: $currentSessionKey)")
+            return
+        }
 
         val runId = payload["runId"].asStringOrNull()
         val isPending = if (runId != null) synchronized(pendingRuns) { pendingRuns.contains(runId) } else true
 
         val state = payload["state"].asStringOrNull()
+        android.util.Log.i("ChatController", "Chat event state: $state, runId: $runId, isPending: $isPending")
         when (state) {
             "delta" -> {
                 if (!isPending) return

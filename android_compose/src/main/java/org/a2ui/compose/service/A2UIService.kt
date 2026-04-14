@@ -66,17 +66,25 @@ class A2UIRendererState(val renderer: A2UIRenderer) {
 @Composable
 fun A2UISurface(
     surfaceId: String,
+    rootComponentId: String = "root",
     modifier: androidx.compose.ui.Modifier = androidx.compose.ui.Modifier,
     rendererState: A2UIRendererState = LocalA2UIContext.current.rendererState
 ) {
     val context = rendererState.renderer.getSurfaceContext(surfaceId)
     // ✅ 直接读取，利用 SnapshotStateMap 响应式更新（不用 remember 缓存）
-    val rootComponent = rendererState.renderer.getComponent(surfaceId, "root")
+    // 使用传入的 rootComponentId 或从 SurfaceContext 获取
+    val actualRootId = if (rootComponentId != "root") rootComponentId
+                        else context?.rootComponentId ?: "root"
+    val rootComponent = rendererState.renderer.getComponent(surfaceId, actualRootId)
+
+    android.util.Log.d("A2UI", "A2UISurface: surfaceId=$surfaceId, actualRootId=$actualRootId, context=$context, rootComponent=$rootComponent")
 
     if (context != null && rootComponent != null) {
         val registry = remember { ComponentRegistry(rendererState.renderer) }
+        android.util.Log.d("A2UI", "A2UISurface: rendering root=${rootComponent.id}, component=${rootComponent.component}")
         registry.render(rootComponent, context)
     } else {
+        android.util.Log.w("A2UI", "A2UISurface: missing context or root - context=$context, root=$rootComponent")
         androidx.compose.material3.CircularProgressIndicator(
             modifier = modifier
         )

@@ -107,6 +107,7 @@ class A2UIRenderer(
     }
 
     fun processMessage(message: String): Result<Unit> {
+        android.util.Log.d("A2UI", "processMessage called, length=${message.length}")
         return try {
             if (message.isBlank()) {
                 val error = A2UIError.ParseError("Empty message", message)
@@ -124,10 +125,13 @@ class A2UIRenderer(
             val jsonObj = try {
                 json.parseToJsonElement(message).jsonObject
             } catch (e: Exception) {
+                android.util.Log.e("A2UI", "Failed to parse JSON: ${e.message}")
                 val error = A2UIError.ParseError("Invalid JSON: ${e.message}", message)
                 handleError(error, "unknown")
                 return Result.failure(e)
             }
+
+            android.util.Log.d("A2UI", "JSON parsed, keys: ${jsonObj.keys}")
 
             // Extract surfaceId from various message formats (v0.8 and v0.9)
             val surfaceId = jsonObj["createSurface"]?.jsonObject?.get("surfaceId")?.jsonPrimitive?.content
@@ -138,21 +142,26 @@ class A2UIRenderer(
                 ?: jsonObj["beginRendering"]?.jsonObject?.get("surfaceId")?.jsonPrimitive?.content
                 ?: "main"
 
+            android.util.Log.d("A2UI", "Detected surfaceId: $surfaceId")
+
             // Handle v0.8 format messages
             when {
                 "surfaceUpdate" in jsonObj -> {
+                    android.util.Log.d("A2UI", "Handling v0.8 surfaceUpdate")
                     handleV08SurfaceUpdate(jsonObj["surfaceUpdate"]!!.jsonObject)
                     surfaceStates[surfaceId] = A2UIRendererState.Idle
                     surfaceChanges[surfaceId]?.value = Unit
                     Result.success(Unit)
                 }
                 "beginRendering" in jsonObj -> {
+                    android.util.Log.d("A2UI", "Handling v0.8 beginRendering")
                     handleV08BeginRendering(jsonObj["beginRendering"]!!.jsonObject)
                     surfaceStates[surfaceId] = A2UIRendererState.Idle
                     surfaceChanges[surfaceId]?.value = Unit
                     Result.success(Unit)
                 }
                 else -> {
+                    android.util.Log.d("A2UI", "Trying v0.9 format")
                     // v0.9 format
                     val a2uiMessage = try {
                         when {
@@ -163,6 +172,7 @@ class A2UIRenderer(
                             else -> throw SerializationException("Unknown message type: no recognized key found")
                         }
                     } catch (e: SerializationException) {
+                        android.util.Log.e("A2UI", "v0.9 decode failed: ${e.message}")
                         val error = A2UIError.ParseError("Invalid JSON format: ${e.message}", message)
                         handleError(error, surfaceId)
                         return Result.failure(e)
@@ -184,6 +194,7 @@ class A2UIRenderer(
                 }
             }
         } catch (e: IllegalArgumentException) {
+            android.util.Log.e("A2UI", "Invalid argument: ${e.message}", e)
             logger.log(A2UILogLevel.ERROR, "Invalid argument: ${e.message}")
             Result.failure(e)
         } catch (e: Exception) {
@@ -209,8 +220,13 @@ class A2UIRenderer(
         componentsArray.forEach { element ->
             val compObj = element as? JsonObject ?: return@forEach
             val id = compObj["id"]?.jsonPrimitive?.content ?: return@forEach
-            val component = parseV08Component(compObj)
-            componentMap[id] = component
+            try {
+                val component = parseV08Component(compObj)
+                componentMap[id] = component
+            } catch (e: Exception) {
+                logger.log(A2UILogLevel.ERROR, "Failed to parse component $id: ${e.message}")
+                android.util.Log.e("A2UI", "Failed to parse component $id", e)
+            }
         }
 
         logger.log(A2UILogLevel.DEBUG, "v0.8 surfaceUpdate: $surfaceId, ${componentsArray.size} components")
@@ -223,10 +239,13 @@ class A2UIRenderer(
         val surfaceId = beginRendering["surfaceId"]?.jsonPrimitive?.content ?: "main"
         val rootId = beginRendering["root"]?.jsonPrimitive?.content ?: "root"
 
-        // Ensure surface exists and has root component
+        // Ensure surface exists
         if (!surfaces.containsKey(surfaceId)) {
             handleCreateSurface(CreateSurface(surfaceId, "default", null, false))
         }
+
+        // Set the root component ID for this surface
+        surfaces[surfaceId]?.rootComponentId = rootId
 
         logger.log(A2UILogLevel.DEBUG, "v0.8 beginRendering: $surfaceId, root=$rootId")
     }
@@ -242,13 +261,129 @@ class A2UIRenderer(
         val componentType = componentObj.keys.firstOrNull() ?: "Text"
         val props = componentObj[componentType]?.jsonObject ?: return Component(id = id, component = componentType)
 
+        // Handle action property (official v0.8 spec), onPress, and onTap for Button actions
+        val action = props["action"]?.let { parseActionObject(it) }
+            ?: props["onPress"]?.let { parseAction(it) }
+            ?: props["onTap"]?.let { parseOnTapAction(it) }
+
         return Component(
             id = id,
             component = componentType,
             text = props["text"]?.let { parseDynamicValue(it) },
+            url = props["url"]?.let { parseDynamicValue(it) },
             children = props["children"]?.let { parseChildren(it) },
-            // Add more property mappings as needed
+            child = props["child"]?.jsonPrimitive?.content,
+            action = action,
+            label = props["label"]?.let { parseDynamicValue(it) },
+            variant = props["variant"]?.jsonPrimitive?.content,
+            usageHint = props["usageHint"]?.jsonPrimitive?.content,
+            placeholder = props["placeholder"]?.let { parseDynamicValue(it) },
+            value = props["value"]?.let { parseAnyDynamicValue(it) },
+            justify = props["justify"]?.jsonPrimitive?.content,
+            align = props["align"]?.jsonPrimitive?.content,
+            direction = props["direction"]?.jsonPrimitive?.content,
+            axis = props["axis"]?.jsonPrimitive?.content,
+            weight = props["weight"]?.jsonPrimitive?.let { it.longOrNull?.toInt() },
+            min = props["min"]?.jsonPrimitive?.doubleOrNull,
+            max = props["max"]?.jsonPrimitive?.doubleOrNull,
+            step = props["step"]?.jsonPrimitive?.doubleOrNull,
+            options = props["options"]?.let { parseOptions(it) },
+            multiple = props["multiple"]?.jsonPrimitive?.booleanOrNull,
+            fit = props["fit"]?.jsonPrimitive?.content,
+            trigger = props["trigger"]?.jsonPrimitive?.content,
+            content = props["content"]?.jsonPrimitive?.content,
+            primary = props["primary"]?.jsonPrimitive?.booleanOrNull,
+            description = props["description"]?.let { parseDynamicValue(it) },
+            name = props["name"]?.let { parseDynamicValue(it) }
         )
+    }
+
+    /**
+     * Parse official v0.8 action object: {"name": "action_name", "context": [...]}
+     */
+    private fun parseActionObject(element: JsonElement): Action? {
+        if (element !is JsonObject) return null
+        val name = element["name"]?.jsonPrimitive?.content ?: return null
+        val contextArray = element["context"] as? JsonArray
+        val context: Map<String, Any>? = contextArray?.mapNotNull { item ->
+            (item as? JsonObject)?.let { ctxItem ->
+                val key = ctxItem["key"]?.jsonPrimitive?.content ?: return@mapNotNull null
+                val value = ctxItem["value"]?.let { parseAnyValue(it) } ?: return@mapNotNull null
+                key to value
+            }
+        }?.toMap()
+        return Action(event = Event(name = name, context = context))
+    }
+
+    private fun parseOnTapAction(element: JsonElement): Action? {
+        return when (element) {
+            is JsonPrimitive -> Action(event = Event(name = element.content))
+            is JsonObject -> {
+                // Handle {"intent":"confirm"} format
+                val intent = element["intent"]?.jsonPrimitive?.content
+                if (intent != null) {
+                    Action(event = Event(name = intent))
+                } else {
+                    // Handle other formats
+                    val eventName = element["name"]?.jsonPrimitive?.content ?: return null
+                    val context = element["context"]?.jsonObject?.mapValues { parseAnyValue(it.value) }?.filterValues { it != null } as? Map<String, Any>
+                    Action(event = Event(name = eventName, context = context))
+                }
+            }
+            else -> null
+        }
+    }
+
+    private fun parseAction(element: JsonElement): Action? {
+        return when (element) {
+            is JsonPrimitive -> Action(event = Event(name = element.content))
+            is JsonObject -> {
+                val eventName = element["name"]?.jsonPrimitive?.content ?: return null
+                val context = element["context"]?.jsonObject?.mapValues { parseAnyValue(it.value) }?.filterValues { it != null } as? Map<String, Any>
+                Action(event = Event(name = eventName, context = context))
+            }
+            else -> null
+        }
+    }
+
+    private fun parseAnyValue(element: JsonElement): Any? {
+        return when (element) {
+            is JsonPrimitive -> when {
+                element.isString -> element.content
+                element.booleanOrNull != null -> element.boolean
+                element.longOrNull != null -> element.long
+                element.doubleOrNull != null -> element.double
+                else -> element.content
+            }
+            is JsonObject -> element.mapValues { parseAnyValue(it.value) }.filterValues { it != null }
+            is JsonArray -> element.map { parseAnyValue(it) }.filterNotNull()
+            else -> null
+        }
+    }
+
+    private fun parseAnyDynamicValue(element: JsonElement): DynamicValue<Any>? {
+        return when (element) {
+            is JsonPrimitive -> DynamicValue.LiteralValue(parseAnyValue(element) ?: return null)
+            is JsonObject -> when {
+                "literalString" in element -> DynamicValue.LiteralValue(element["literalString"]!!.jsonPrimitive.content)
+                "path" in element -> DynamicValue.PathValue(element["path"]!!.jsonPrimitive.content)
+                else -> DynamicValue.LiteralValue(parseAnyValue(element) ?: return null)
+            }
+            else -> null
+        }
+    }
+
+    private fun parseOptions(element: JsonElement): List<Option>? {
+        return when (element) {
+            is JsonArray -> element.mapNotNull { opt ->
+                (opt as? JsonObject)?.let { obj ->
+                    val label = obj["label"]?.jsonPrimitive?.content ?: return@let null
+                    val value = parseAnyValue(obj["value"]!!) ?: return@let null
+                    Option(label = label, value = value)
+                }
+            }
+            else -> null
+        }
     }
 
     private fun parseDynamicValue(element: JsonElement): DynamicValue<String> {
@@ -517,6 +652,10 @@ class A2UIRenderer(
         return surfaces.keys.toList()
     }
 
+    fun getAllComponentIds(surfaceId: String): List<String> {
+        return surfaceComponents[surfaceId]?.keys?.toList() ?: emptyList()
+    }
+
     fun getSurfaceState(surfaceId: String): A2UIRendererState? {
         return surfaceStates[surfaceId]
     }
@@ -690,7 +829,11 @@ data class SurfaceContext(
     val sendDataModel: Boolean = false,
     val renderDepth: Int = 0,
     /** Collection scope path for template rendering (e.g., "/users/0") */
-    val scopePath: String? = null
+    val scopePath: String? = null,
+    /** Root component ID for this surface (set by beginRendering) */
+    var rootComponentId: String = "root",
+    /** Creation timestamp for tracking newest surface */
+    val createdAt: Long = System.currentTimeMillis()
 )
 
 interface ActionHandler {
