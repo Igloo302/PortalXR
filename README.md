@@ -4,6 +4,8 @@
 [![Kotlin](https://img.shields.io/badge/Kotlin-1.9.22-blue.svg)](https://kotlinlang.org)
 [![API](https://img.shields.io/badge/API-34%2B-brightgreen.svg)](https://android-arsenal.com/api?level=34)
 
+**[中文](README_CN.md)** | **English**
+
 **PortalXR** is an Android XR application that connects to [OpenClaw](https://github.com/openclaw/openclaw) Gateway, enabling AI-powered conversational interfaces with dynamic UI rendering in extended reality environments.
 
 ## Features
