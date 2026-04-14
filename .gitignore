@@ -13,3 +13,36 @@
 .externalNativeBuild
 .cxx
 local.properties
+
+# Build outputs
+**/build/
+*.apk
+*.aab
+*.ap_
+*.dex
+
+# Kotlin
+*.class
+*.jar
+*.kt.swp
+
+# Local config
+local.properties
+secrets.properties
+
+# Reference directory (not for distribution)
+/reference/
+
+# Claude Code
+.claude/
+.playwright-mcp/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+*.iml
+.idea/
+*.swp
+*.swo
