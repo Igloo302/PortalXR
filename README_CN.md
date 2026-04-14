@@ -68,7 +68,7 @@
 ### 1. 克隆仓库
 
 ```bash
-git clone https://github.com/your-org/PortalXR.git
+git clone https://github.com/Igloo302/PortalXR.git
 cd PortalXR
 ```
 
@@ -172,12 +172,12 @@ PortalXR/
 
 ```kotlin
 val endpoint = GatewayEndpoint.manual(
-    host = "your-gateway.local",
+    host = "gateway.local",
     port = 18789
 )
 
 val auth = GatewayConnectAuth(
-    token = "your-auth-token",
+    token = "auth-token",
     bootstrapToken = null,
     password = null
 )
@@ -265,6 +265,10 @@ class A2UIRenderer {
   - 动态 UI 渲染协议规范
   - 组件模型和消息格式
 
+- **[A2UI-Android](https://github.com/google/A2UI-Android)** - A2UI Android 参考实现
+  - 组件渲染模式和注册表设计
+  - 数据模型和状态管理方法
+
 - **[Jetpack Compose](https://developer.android.com/jetpack/compose)** - 现代 Android UI 工具包
 - **[Jetpack XR](https://developer.android.com/jetpack/xr)** - Android XR 开发框架
 
@@ -312,5 +316,5 @@ limitations under the License.
 
 ## 支持
 
-- **问题反馈**: [GitHub Issues](https://github.com/your-org/PortalXR/issues)
-- **讨论**: [GitHub Discussions](https://github.com/your-org/PortalXR/discussions)
+- **问题反馈**: [GitHub Issues](https://github.com/Igloo302/PortalXR/issues)
+- **讨论**: [GitHub Discussions](https://github.com/Igloo302/PortalXR/discussions)

@@ -68,7 +68,7 @@
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/your-org/PortalXR.git
+git clone https://github.com/Igloo302/PortalXR.git
 cd PortalXR
 ```
 
@@ -172,12 +172,12 @@ PortalXR/
 
 ```kotlin
 val endpoint = GatewayEndpoint.manual(
-    host = "your-gateway.local",
+    host = "gateway.local",
     port = 18789
 )
 
 val auth = GatewayConnectAuth(
-    token = "your-auth-token",
+    token = "auth-token",
     bootstrapToken = null,
     password = null
 )
@@ -265,6 +265,10 @@ This project was inspired by and incorporates patterns from:
   - Protocol specification for dynamic UI rendering
   - Component model and message format
 
+- **[A2UI-Android](https://github.com/google/A2UI-Android)** - A2UI Android reference implementation
+  - Component rendering patterns and registry design
+  - Data model and state management approach
+
 - **[Jetpack Compose](https://developer.android.com/jetpack/compose)** - Modern Android UI toolkit
 - **[Jetpack XR](https://developer.android.com/jetpack/xr)** - Android XR development framework
 
@@ -312,5 +316,5 @@ If you discover a security vulnerability, please report it by opening an issue w
 
 ## Support
 
-- **Issues**: [GitHub Issues](https://github.com/your-org/PortalXR/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/your-org/PortalXR/discussions)
+- **Issues**: [GitHub Issues](https://github.com/Igloo302/PortalXR/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/Igloo302/PortalXR/discussions)
